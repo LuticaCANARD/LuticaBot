@@ -1,4 +1,4 @@
-import { db } from '../Utils/db';
+import { db } from '../utils//db/db';
 
 const meme_ = await db.selectFrom('CasinoMember').select(['CasinoMember.userId','CasinoMember.name']).execute();
 const roles_ = await db.selectFrom('CasinoRoles').select(['CasinoRoles.RoleName']).orderBy('CasinoRoles.Priority').execute();
