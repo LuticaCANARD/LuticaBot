@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { ChatInputCommandInteraction , CacheType ,GuildMemberRoleManager } from 'discord.js';
+import { ChatInputCommandInteraction , type CacheType ,GuildMemberRoleManager } from 'discord.js';
 
 
 export default {

@@ -1,5 +1,5 @@
 import { SlashCommandBuilder,GuildMemberRoleManager } from 'discord.js';
-import { ChatInputCommandInteraction , CacheType } from 'discord.js';
+import { ChatInputCommandInteraction , type CacheType } from 'discord.js';
 
 export const getDiscordArgus = (interaction:ChatInputCommandInteraction<CacheType>) => {
     const argu = interaction.options.data

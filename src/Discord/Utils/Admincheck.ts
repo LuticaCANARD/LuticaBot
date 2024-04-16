@@ -1,6 +1,6 @@
 import { administer_role_id } from '../discordPref';
 import { SlashCommandBuilder,GuildMemberRoleManager } from 'discord.js';
-import { ChatInputCommandInteraction , CacheType } from 'discord.js';
+import { ChatInputCommandInteraction , type CacheType } from 'discord.js';
 export const checkAdmin = async (interaction:ChatInputCommandInteraction<CacheType>)=>{
     const administer = interaction.member?.roles;
     const admin_id = administer_role_id;
