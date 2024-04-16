@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-kysely"
+  output = "../src/TYPES"
+  fileName = "schema.ts"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  relationMode = "prisma"
+
+}
+generator erd {
+  provider = "prisma-erd-generator"
+  output = "./schema.md"
+}
+model CasinoChat {
+  id     String @id
+  chatId String
+}
+
+model CasinoEvent {
+  time   DateTime
+  userId String
+
+  @@id([time, userId])
+}
+
+model CasinoInternHistory {
+  userId   String
+  RoleName String
+
+  @@id([userId, RoleName])
+}
+
+model CasinoMember {
+  name    String?
+  userId  String   @id
+  intern  Boolean
+  exeJoin Boolean?
+}
+
+model CasinoRoles {
+  Priority Int     @id @default(autoincrement())
+  RoleName String
+  userId   String?
+}
+
+model DateWeek {
+  DateId           Int      @id
+  STCS_DT          DateTime
+  DAY_DV_CD_NM     String
+  BIZ_DD_STG_CD_NM String
+}
+
+model DiscordServer {
+  GuildId String @id
+}
+
+model RailStnStat {
+  DateId           Int
+  EXTR_STN_CD      Int
+  HR_UNIT_HR_DV_CD Int
+  ABRD_PRNB        Int
+  GOFF_PRNB        Int
+
+  @@id([DateId, EXTR_STN_CD, HR_UNIT_HR_DV_CD])
+  @@unique([DateId, EXTR_STN_CD, HR_UNIT_HR_DV_CD])
+  @@index([HR_UNIT_HR_DV_CD])
+}
+
+model ServerPref {
+  prefKey String @id
+  value   String
+}
+
+model StnName {
+  HR_UNIT_HR_DV_CD Int    @id
+  STN_NM           String
+}
+
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+}
+
+model VoteExecutor {
+  ServerId Int
+  UserId   Int
+
+  @@id([ServerId, UserId])
+}
