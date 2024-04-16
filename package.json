@@ -7,5 +7,17 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "prisma": "^5.12.1",
+    "kysely": "^0.27.3",
+    "moment": "^2.29.4",
+    "crypto-js": "^4.1.1",
+    "@prisma/client": "latest",
+    "prisma-erd-generator": "^1.6.0",
+    "prisma-kysely": "^1.8.0",
+    "ws": "^8.13.0",
+    "xata": "^0.2.0"
   }
 }
