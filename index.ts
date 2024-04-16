@@ -12,7 +12,7 @@ const client = new Client({
 		GatewayIntentBits.GuildMembers,
 	] })
 const commands = new Collection<string,any>() 
-const commandsPath = path.join(__dirname, './Discord/command');
+const commandsPath = path.join(__dirname, './src/Discord/command');
 const dirs = fs.readdirSync(commandsPath);
 for (const dir of dirs){
 	if(dir=='Utils') continue;
@@ -49,6 +49,7 @@ client.on(Events.InteractionCreate, async interaction => {
 		await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
 	}
 });
+
 
 
 

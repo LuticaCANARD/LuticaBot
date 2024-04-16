@@ -20,7 +20,7 @@ erDiagram
   
 
   "CasinoMember" {
-    String name "❓"
+    String name 
     String userId "🗝️"
     Boolean intern 
     Boolean exeJoin "❓"
@@ -71,7 +71,7 @@ erDiagram
   "User" {
     Int id "🗝️"
     String email 
-    String name "❓"
+    String name 
     }
   
 

@@ -12,8 +12,8 @@ export const executeCommand = () =>{
     let guildId ='';
 
 
-    clientId = process.env.CLIENT_ID;
-    guildId = process.env.TO_REGISTER_GUILD;
+    clientId = process.env.CLIENT_ID ?? '';
+    guildId = process.env.TO_REGISTER_GUILD ?? '';
     let casinoguildId = process.env.TO_REGISTER_GUILD_CASINO;
     const token = process.env.DISCORD_BOT_TOKEN;
 
@@ -23,7 +23,7 @@ export const executeCommand = () =>{
         const path_d = path.join(__dirname, './Discord/command/normal');
         const commands = [];
         // Grab all the command files from the commands directory you created earlier
-        const commandFiles = fs.readdirSync(path_d).filter(file => file.endsWith('.ts'));
+        const commandFiles = fs.readdirSync(path_d).filter((file:string) => file.endsWith('.ts'));
         // Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
         for (const file of commandFiles) {
             const command = require(path.join(path_d,`/${file}`));
@@ -64,7 +64,7 @@ export const executeCommand = () =>{
             if(casinoguildId) {
                 const path_casino = path.join(__dirname, './Discord/command/Casino');
                 const CasinoCommand = getNormalCommands();
-                const CasinoCommandFiles = fs.readdirSync(path_casino).filter(file => file.endsWith('.ts'));
+                const CasinoCommandFiles = fs.readdirSync(path_casino).filter((file:string) => file.endsWith('.ts'));
 
                 for (const file of CasinoCommandFiles) {
                     const command = require(path.join(path_casino,`/${file}`));

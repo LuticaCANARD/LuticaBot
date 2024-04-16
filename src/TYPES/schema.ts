@@ -17,7 +17,7 @@ export type CasinoInternHistory = {
     RoleName: string;
 };
 export type CasinoMember = {
-    name: string | null;
+    name: string;
     userId: string;
     intern: boolean;
     exeJoin: boolean | null;
@@ -54,7 +54,7 @@ export type StnName = {
 export type User = {
     id: Generated<number>;
     email: string;
-    name: string | null;
+    name: string;
 };
 export type VoteExecutor = {
     ServerId: number;

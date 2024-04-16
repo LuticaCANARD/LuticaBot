@@ -34,7 +34,7 @@ model CasinoInternHistory {
 }
 
 model CasinoMember {
-  name    String?
+  name    String
   userId  String   @id
   intern  Boolean
   exeJoin Boolean?
@@ -82,7 +82,7 @@ model StnName {
 model User {
   id    Int     @id @default(autoincrement())
   email String  @unique
-  name  String?
+  name  String
 }
 
 model VoteExecutor {
