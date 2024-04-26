@@ -1,9 +1,9 @@
-import { MessageReaction, ReactionCollector, SlashCommandBuilder, User } from 'discord.js';
-import { ChatInputCommandInteraction , type CacheType } from 'discord.js';
+import { type MessageReaction, type ReactionCollector, SlashCommandBuilder, type User, type ChatInputCommandInteraction , type CacheType } from 'discord.js';
 import {db} from '../../../utils/db/db'
 import { checkAdmin } from '../../Utils/Admincheck';
 import { botDiscordId } from '../../../utils/constant';
 import { getCasinoRoles } from '../../../model/CasinoRole';
+import { mention } from '../../Utils/discordUtil';
 
 export default {
 	data: new SlashCommandBuilder()
@@ -30,26 +30,49 @@ export default {
             collector.stop()
             if(reaction.emoji.name === '✅') {
                 const dataUsers = await p.reactions.cache.get('✨')?.users.fetch();
-                const users = dataUsers?.filter( u => u !== undefined && u.id !== botDiscordId && u.id !== interaction.user.id).map(user => {return {
-                    id:user.id,
-                    userName:user.displayName,
-                }});
+                const users = dataUsers?.filter( u => u !== undefined && u.id !== botDiscordId && u.id !== interaction.user.id).map(getUserMeta);
                 if(users === undefined || users.length < 0) {
                     await p.channel.send('오늘은 진행하지 않습니다...');
                     return;
                 }
-                const roleList = await getCasinoRoles(String(interaction.guildId));
-    
-                const roles = await getRoleDisplayString(roleList);
-                const roleMessage = await p.channel.send(roles.str);
-                for(let i = 0; i < roles.len; i++){
-                    await roleMessage.react(`${(roleList[i].Priority)%(roles.len+1)}\u20E3`);
-                }
-                await roleMessage.react('✅') // 다음 스텝으로 넘어가는 이모지 (관리자용)
-                await roleMessage.react('❌');
-                const roleCollector = roleMessage.createReactionCollector({ filter:adminFilter, time: 24 * 60 * 60_000 });
-                await roleShuffle(roleCollector,users,roleList);
                 
+                const roleList = await getCasinoRoles(String(interaction.guildId));
+                
+                const roles = await getRoleDisplayString(roleList);
+
+                const roleMessageFirst = await p.channel.send('1부 역할 지정...\n'+roles.str);
+                for(let i = 0; i < roles.len; i++){
+                    await roleMessageFirst.react(`${(roleList[i].Priority)%(roles.len+1)}\u20E3`);
+                }
+                await roleMessageFirst.react('✅') // 다음 스텝으로 넘어가는 이모지 (관리자용)
+                await roleMessageFirst.react('❌');
+                roleMessageFirst.createReactionCollector({ filter:adminFilter, time: 24 * 60 * 60_000 })
+                .on('collect', async (reaction, user) => {
+                    if(reaction.emoji.name === '✅') {
+                        // 첫번째 역할 선택의 결과를 저장한다.
+                        const firstRole = new Map<string,UserMeta[]>();
+                        const choices = roleMessageFirst.reactions.cache.filter(r => r.emoji.name !== '✅' && r.emoji.name !== '❌');
+                        for(const r of roleList){
+                            const choice = choices.get(`${(r.Priority)%(roleList.length+1)}\u20E3`);
+                            if(choice === undefined) continue;
+                            const choicer = (await choice.users.fetch()).filter(u => u !== undefined && u.id !== botDiscordId && u.id !== interaction.user.id).map(getUserMeta);
+                            if(choicer.length === 0) continue; 
+                            firstRole.set(r.RoleName,choicer);
+                        }
+
+                        await roleMessageFirst.delete();
+                        const roleMessageSecond = await p.channel.send('2부 역할 지정...\n'+roles.str);
+                        for(let i = 0; i < roles.len; i++){
+                            await roleMessageSecond.react(`${(roleList[i].Priority)%(roles.len+1)}\u20E3`);
+                        }
+                        await roleMessageSecond.react('✅') // 다음 스텝으로 넘어가는 이모지 (관리자용)
+                        await roleMessageSecond.react('❌');
+                        const roleCollector = roleMessageSecond.createReactionCollector({ filter:adminFilter, time: 24 * 60 * 60_000 });
+                        await roleShuffle(roleCollector,users,roleList,firstRole,interaction.user.id);
+                    } else if(reaction.emoji.name === '❌') {
+                        await p.channel.send('오늘은 진행하지 않습니다...');
+                    }
+                });
             } else if(reaction.emoji.name === '❌') {
                 await p.channel.send('오늘은 진행하지 않습니다...');
             }
@@ -62,6 +85,7 @@ export default {
 	
 }; 
 
+
 const getRoleDisplayString = async(roles:{
     Priority: number;
     RoleName: string;
@@ -69,7 +93,7 @@ const getRoleDisplayString = async(roles:{
     const display = roles.filter(r=>!r.RoleName.endsWith('2'));
     let str = '```';
     for(let i = 0; i < display.length; i++){
-        str += `${i + 1} : ${display[i].RoleName}\n`;
+        str += `${i + 1}\u20E3 : ${display[i].RoleName}\n`;
     }
     str += '```';
     return {str,len:display.length};
@@ -81,7 +105,7 @@ const roleShuffle = async (roleControl:ReactionCollector, userList :  {
 }[] | undefined,roles:{
     Priority: number;
     RoleName: string;
-}[]) =>{
+}[], firstRole:Map<string,UserMeta[]>,manager:string) =>{
     let step = false;
     roleControl.on('collect', async (reaction, user) => {
         if(reaction.emoji.name === '✅') {
@@ -96,29 +120,119 @@ const roleShuffle = async (roleControl:ReactionCollector, userList :  {
                 userMap.set(u.id,u.userName);
             }
             const choices = roleControl.message.reactions.cache.filter(r => r.emoji.name !== '✅' && r.emoji.name !== '❌');
+            const secondRoleMap = new Map<string,UserMeta[]>();
             for(const r of roles){
                 const choice = choices.get(`${(r.Priority)%(roles.length+1)}\u20E3`);
-                
-                if(choice === undefined) {
-                    roleControl.message.channel.send('ERROR ! code 201' + r.Priority).then();
-                    roleControl.stop();
-                    return;
-                }
+                if(choice === undefined) continue;
                 const users = await choice.users.fetch();
-                const user_ = users.filter(u => u !== undefined && u.id !== botDiscordId && u.id !== user.id).random();
-                if(user === undefined) {
-                    roleControl.message.channel.send('ERROR ! code 202').then();
-                    roleControl.stop();
-                    return;
-                }
-                
+                const choicer = users.filter(u => u !== undefined && u.id !== botDiscordId && u.id !== user.id).map(getUserMeta);
+                if(choicer.length === 0) continue;
+                secondRoleMap.set(r.RoleName,choicer);
             }
+            // 이제 선택이 끝났다.
+
+            // 이하부터는 역할을 배정하는 과정이다.
+            const firstTimeResult = new Map<string,UserMeta>();
+            const userUsedFirst = new Map<string,boolean>();
+            // 일단 1부에 배정된 사람들은 배정된 역할에 할당한다.
+            // 그런데, 두명 이상이 할당된 경우, 역할명 뒤에 2가 붙은 역할로 할당한다.
+            for(const [roleName,users] of firstRole){
+                firstTimeResult.set(roleName,users[0]);
+                userUsedFirst.set(users[0].id,true);
+                if(users.length > 1){
+                    firstTimeResult.set(roleName+'2',users[1]);
+                    userUsedFirst.set(users[1].id,true);
+                }
+            }
+            const firstRandomUserList = userList.filter(u => !userUsedFirst.has(u.id)).sort(()=>Math.random()-0.5);
+            let uidx = 0;
+            for(const r of roles){
+                if(!firstTimeResult.has(r.RoleName)){
+                    firstTimeResult.set(r.RoleName,firstRandomUserList[uidx]);
+                    uidx++;
+                    if(uidx === firstRandomUserList.length) break;
+                }
+            }
+
+            // 이제 2부를 배정한다.
+            // 역할이 지정된 경우를 제외하고, 1부와는 다른 역할을 할당한다.
+
+            // 일단 이하의 경우 지정된 경우이므로, 절대로 건드리지 아니한다.
+            const secondTimeResult = new Map<string,UserMeta>();
+            const secondUsedMap = new Map<string,boolean>();
+            for(const [roleName,users] of secondRoleMap){
+                secondTimeResult.set(roleName,users[0]);
+                secondUsedMap.set(users[0].id,true);
+                if(users.length > 1){
+                    secondTimeResult.set(roleName+'2',users[1]);
+                    secondUsedMap.set(users[1].id,true);
+                }
+            }
+            
+            const secondRandomUserList = userList.filter(u => !secondUsedMap.has(u.id)).sort(()=>Math.random()-0.5);
+
+            uidx = 0;
+            for(const r of roles){
+                if(!secondTimeResult.has(r.RoleName)){
+                    if(secondRandomUserList[uidx] !== undefined && firstTimeResult.get(r.RoleName)?.id === secondRandomUserList[uidx].id) {
+                        // 중복 ... !
+                        // 이 경우, 다른 역할을 할당한다.
+                        let rolename = r.RoleName;
+                        do{
+                            const randomIdx = Math.floor(Math.random()*roles.length);
+                            rolename = roles[randomIdx].RoleName;
+                        }
+                        while(secondRoleMap.has(rolename) 
+                            && secondTimeResult.get(rolename) !== undefined 
+                            && firstTimeResult.get(r.RoleName)?.id !== (secondTimeResult.get(rolename)?.id));
+                        if(secondTimeResult.get(rolename) !== undefined) {
+                            const tmp = secondTimeResult.get(rolename);
+                            secondTimeResult.set(rolename,secondRandomUserList[uidx]);
+                            if(tmp !== undefined) secondRandomUserList[uidx] = tmp;
+                        }
+                    }
+                    secondTimeResult.set(r.RoleName,secondRandomUserList[uidx]);
+                    uidx++;
+                    if(uidx === secondRandomUserList.length) break;
+                }
+            }
+            // 이제 역할이 모두 배정되었다.
+            // 보여주도록 한다.
+            // 보여줄때에는, 멘션 : 역할 \n으로 보여준다.
+            let managerMsg = `매니저 : ${mention(manager)}\n`;
+            let firstTime = '\n';
+            for(const [roleName,user] of firstTimeResult){
+                firstTime += `${mention(user.id)} : ${roleName}\n`;
+            }
+            let secondTime = '\n';
+            for(const [roleName,user] of secondTimeResult){
+                secondTime += `${mention(user.id)} : ${roleName}\n`;
+            }
+
+            let msg = ''
+            msg += managerMsg;
+            msg += firstTime;
+            msg += secondTime;
+            
+            roleControl.message.channel.send(msg).then();
+            // 모든 것이 끝났다.
         } else if(reaction.emoji.name === '❌') {
             roleControl.message.channel.send('종료합니다...').then();
         }
         roleControl.stop();
     });
     roleControl.on('end', collected => {
-        if(step === false) roleControl.message.channel.send('다시 진행하세요...').then();
+        if(step === false) 
+            roleControl.message.channel.send('다시 진행하세요...').then();
     });
 };
+
+const getUserMeta = (user:User):UserMeta => { return {
+    id : user.id,
+    userName : user.displayName,
+}}
+
+type UserMeta = {
+    id:string,
+    userName:string,
+}
