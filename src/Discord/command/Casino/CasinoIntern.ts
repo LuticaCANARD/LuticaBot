@@ -53,12 +53,6 @@ export default {
 			await replyInsertResult(interaction,result.length === 1,userDiscord,isNeedSetToIntern,102) 
 			
 		}
-		
-	
-
-		
-		//if(read.length>0) await db.updateTable("CasinoChat").set({"chatId":Number(p.id)}).where("CasinoChat.id","=",Number(p.guildId)).execute();
-		//else await db.insertInto("CasinoChat").values([{"id" : Number(p.guildId),"chatId":Number(p.id)}]).execute();*/
 	}
 	
 }; 

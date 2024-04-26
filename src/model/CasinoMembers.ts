@@ -1,17 +1,9 @@
 import type { Interaction } from 'discord.js';
 import { db } from '../utils/db/db';
 
-export const GetCasinoChatters = async(guildId:string) =>{
-    return await db.
-		selectFrom("CasinoChat")
-		.where("CasinoChat.id","=",guildId)
-		.select("CasinoChat.chatId")
-		.execute();
-}
-
 export const GetCasinoRole = async () =>{
     return await db.selectFrom("CasinoRoles")
-    .select(["CasinoRoles.RoleName","CasinoRoles.userId","CasinoRoles.Priority"])
+    .select(["CasinoRoles.RoleName","CasinoRoles.Priority"])
     .orderBy("CasinoRoles.Priority").execute();
 }
 export const GetMemberName = async (memberids:string[])=>{
@@ -42,6 +34,7 @@ export const regisCasinoMember = async(interaction:Interaction,memberDiscordId:s
     
     let regisName = option.name ?? (await interaction.guild?.members.fetch(memberDiscordId))?.displayName ?? '';
     return await db.insertInto("CasinoMember").values({
+        GuildId : interaction.guildId ?? '',
         "intern" : option.intern ?? false,
         "name" : regisName,
         "userId" : memberDiscordId

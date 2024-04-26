@@ -82,17 +82,13 @@ export default {
 			console.log(id)
 			await db.insertInto("CasinoMember")
 			.values({
-				"userId" : id.get("디스코드"),
-				"name" : id.get("별명"),
+				"GuildId" : String(interaction.guildId),
+				"userId" : String(id.get("디스코드")),
+				"name" : String(id.get("별명")),
 				"intern" : intern
 			}).execute()
 			await interaction.reply({content:`<@${id.get("디스코드")}>님! 카지노 멤버로 오신걸 환영합니다!`})
 		}
-	
-
-		
-		//if(read.length>0) await db.updateTable("CasinoChat").set({"chatId":Number(p.id)}).where("CasinoChat.id","=",Number(p.guildId)).execute();
-		//else await db.insertInto("CasinoChat").values([{"id" : Number(p.guildId),"chatId":Number(p.id)}]).execute();*/
 	}
 	
 }; 

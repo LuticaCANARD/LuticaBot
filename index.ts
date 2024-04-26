@@ -1,5 +1,5 @@
 import {executeCommand} from './discordDeployer'
-import { Collection,Client, GatewayIntentBits,SlashCommandBuilder,Events, REST, Routes, ChatInputCommandInteraction } from "discord.js";
+import { Collection,Client, GatewayIntentBits,SlashCommandBuilder,Events, REST, Routes, ChatInputCommandInteraction,Partials  } from "discord.js";
 import path from 'node:path';
 import fs from 'fs';
 executeCommand();
@@ -10,7 +10,10 @@ const client = new Client({
 		GatewayIntentBits.GuildMessages, 
 		GatewayIntentBits.MessageContent,
 		GatewayIntentBits.GuildMembers,
-	] })
+		GatewayIntentBits.GuildMessageReactions
+	],
+	partials:[Partials.Message, Partials.Channel, Partials.Reaction],
+})
 const commands = new Collection<string,any>() 
 const commandsPath = path.join(__dirname, './src/Discord/command');
 const dirs = fs.readdirSync(commandsPath);
@@ -53,6 +56,7 @@ client.on(Events.InteractionCreate, async interaction => {
 client.on(Events.MessageReactionAdd,async interaction =>{
 	// 1. 만약 체크해야 할 대상이 대상 길드에서 왔는지
 	// 2. 만약 체크 대상이라면... 처리한다.
+	//console.log(interaction)
 })
 
 

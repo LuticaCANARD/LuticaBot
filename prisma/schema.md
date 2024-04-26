@@ -2,7 +2,7 @@
 erDiagram
 
   "CasinoChat" {
-    String id "🗝️"
+    String guildId "🗝️"
     String chatId 
     }
   
@@ -20,6 +20,7 @@ erDiagram
   
 
   "CasinoMember" {
+    String GuildId "🗝️"
     String name 
     String userId "🗝️"
     Boolean intern 
@@ -28,9 +29,9 @@ erDiagram
   
 
   "CasinoRoles" {
+    String GuildId "🗝️"
     Int Priority "🗝️"
     String RoleName 
-    String userId "❓"
     }
   
 
@@ -78,6 +79,12 @@ erDiagram
   "VoteExecutor" {
     Int ServerId "🗝️"
     Int UserId "🗝️"
+    }
+  
+
+  "AdminRoleId" {
+    String GuildId "🗝️"
+    String RoleId "🗝️"
     }
   
 ```

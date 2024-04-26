@@ -22,7 +22,7 @@ export default {
 		const v = argus.get("역할목록")?.replace(/, /g,',').replace(/ ,/g,',').split(',');
 		await db.deleteFrom("CasinoRoles").execute();
 		for(let n of v){
-			await db.insertInto("CasinoRoles").values({"RoleName":n}).execute()
+			await db.insertInto("CasinoRoles").values({"RoleName":n,"GuildId" : String(interaction.guildId),}).execute()
 		}
 		await interaction.reply({content:"카지노 역할지정을 완료했습니다!"})
 	}

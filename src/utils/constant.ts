@@ -1,0 +1,1 @@
+export const botDiscordId = process.env.CLIENT_ID;

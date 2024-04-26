@@ -15,7 +15,7 @@ generator erd {
   output = "./schema.md"
 }
 model CasinoChat {
-  id     String @id
+  guildId     String @id
   chatId String
 }
 
@@ -34,16 +34,19 @@ model CasinoInternHistory {
 }
 
 model CasinoMember {
+  GuildId String
   name    String
-  userId  String   @id
+  userId  String   
   intern  Boolean
   exeJoin Boolean?
+  @@id([GuildId, userId])
 }
 
 model CasinoRoles {
-  Priority Int     @id @default(autoincrement())
+  GuildId String
+  Priority Int     @default(autoincrement())
   RoleName String
-  userId   String?
+  @@id([GuildId, Priority])
 }
 
 model DateWeek {
@@ -90,4 +93,10 @@ model VoteExecutor {
   UserId   Int
 
   @@id([ServerId, UserId])
+}
+model AdminRoleId {
+  GuildId String
+  RoleId   String
+
+  @@id([GuildId, RoleId])
 }

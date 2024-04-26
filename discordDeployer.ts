@@ -20,7 +20,7 @@ export const executeCommand = () =>{
 
 
     const getNormalCommands = () =>{
-        const path_d = path.join(__dirname, './Discord/command/normal');
+        const path_d = path.join(__dirname, './src/Discord/command/normal');
         const commands = [];
         // Grab all the command files from the commands directory you created earlier
         const commandFiles = fs.readdirSync(path_d).filter((file:string) => file.endsWith('.ts'));
@@ -62,7 +62,7 @@ export const executeCommand = () =>{
 
             console.log(`Successfully reloaded ${data.length} application (/) commands.`);
             if(casinoguildId) {
-                const path_casino = path.join(__dirname, './Discord/command/Casino');
+                const path_casino = path.join(__dirname, './src/Discord/command/Casino');
                 const CasinoCommand = getNormalCommands();
                 const CasinoCommandFiles = fs.readdirSync(path_casino).filter((file:string) => file.endsWith('.ts'));
 

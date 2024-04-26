@@ -25,8 +25,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "start": "prisma generate | bun src/server.ts",
-    "dev": "prisma generate | bun --hot src/server.ts",
+    "start": "prisma generate | bun index.ts",
+    "dev": "prisma generate | bun --hot index.ts",
     "test": "jest",
     "db:push": "prisma db push",
     "generate": "prisma generate"

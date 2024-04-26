@@ -4,8 +4,12 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   : ColumnType<T, T | undefined, T>;
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
+export type AdminRoleId = {
+    GuildId: string;
+    RoleId: string;
+};
 export type CasinoChat = {
-    id: string;
+    guildId: string;
     chatId: string;
 };
 export type CasinoEvent = {
@@ -17,15 +21,16 @@ export type CasinoInternHistory = {
     RoleName: string;
 };
 export type CasinoMember = {
+    GuildId: string;
     name: string;
     userId: string;
     intern: boolean;
     exeJoin: boolean | null;
 };
 export type CasinoRoles = {
+    GuildId: string;
     Priority: Generated<number>;
     RoleName: string;
-    userId: string | null;
 };
 export type DateWeek = {
     DateId: number;
@@ -61,6 +66,7 @@ export type VoteExecutor = {
     UserId: number;
 };
 export type DB = {
+    AdminRoleId: AdminRoleId;
     CasinoChat: CasinoChat;
     CasinoEvent: CasinoEvent;
     CasinoInternHistory: CasinoInternHistory;
