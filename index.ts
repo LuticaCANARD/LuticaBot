@@ -50,6 +50,11 @@ client.on(Events.InteractionCreate, async interaction => {
 	}
 });
 
+client.on(Events.MessageReactionAdd,async interaction =>{
+	// 1. 만약 체크해야 할 대상이 대상 길드에서 왔는지
+	// 2. 만약 체크 대상이라면... 처리한다.
+})
+
 
 
 
