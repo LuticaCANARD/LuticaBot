@@ -4,6 +4,7 @@ import { db } from '../../../utils/db/db'
 import { administer_role_id } from '../../discordPref';
 import { checkAdmin } from '../../Utils/Admincheck';
 import { GetThereIsCasinoMemberByDiscordID, regisCasinoMember } from '../../../model/CasinoMembers';
+import { getDiscordArgus } from '../../Utils/getArugs';
 export default {
 	data: new SlashCommandBuilder()
 		.setName('인턴')
@@ -31,14 +32,11 @@ export default {
 	async execute(interaction:ChatInputCommandInteraction<CacheType>){
 		if((await checkAdmin(interaction)) === false) return; // 관리자 전용임.
 
-		const discordArguments = new Map();
-		
-		for(const discordArgument of interaction.options.data) 
-		{
-			discordArguments.set(discordArgument.name,discordArgument.value);
-		}
+		const discordArguments = getDiscordArgus(interaction);
 		const isNeedSetToIntern = discordArguments.get("옵션") === 'save'
+		// 유저의 Discord ID
 		const userDiscord = discordArguments.get("디스코드")
+
 		// 일단 member 가 있는지부터 조회한다.
 		if((await GetThereIsCasinoMemberByDiscordID(userDiscord)).length === 0){
 			// member가 없다면 입력부터 한다.
@@ -50,6 +48,7 @@ export default {
 		}
 		else
 		{
+			// 만약 유저가 존재한다면 업데이트를 진행한다,
 			const result = await db.updateTable("CasinoMember").set("CasinoMember.intern",isNeedSetToIntern).where("CasinoMember.userId" , "=", userDiscord).execute();
 			await replyInsertResult(interaction,result.length === 1,userDiscord,isNeedSetToIntern,102) 
 			

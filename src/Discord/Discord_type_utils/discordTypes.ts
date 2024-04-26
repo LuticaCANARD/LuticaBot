@@ -1,6 +1,3 @@
-import { type } from "os"
-
-
 
 export type DiscordCommandType = {
 	id : string|number,	//Unique ID of command	all
