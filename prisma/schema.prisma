@@ -100,3 +100,9 @@ model AdminRoleId {
 
   @@id([GuildId, RoleId])
 }
+model InternRoleId {
+  GuildId String
+  RoleId   String
+
+  @@id([GuildId, RoleId])
+}

@@ -1,20 +1,24 @@
-import { type MessageReaction, type ReactionCollector, SlashCommandBuilder, type User, type ChatInputCommandInteraction , type CacheType } from 'discord.js';
+import { type MessageReaction, type ReactionCollector, SlashCommandBuilder, type User, type ChatInputCommandInteraction , type CacheType, Guild } from 'discord.js';
 import {db} from '../../../utils/db/db'
 import { checkAdmin } from '../../Utils/Admincheck';
-import { botDiscordId } from '../../../utils/constant';
-import { getCasinoRoles } from '../../../model/CasinoRole';
+import { botDiscordId,keycapCode } from '../../../utils/constant';
+import { getCasinoRoles, getInternRoleId } from '../../../model/CasinoRole';
 import { mention } from '../../Utils/discordUtil';
 import { DateTime } from 'luxon';
+import { getRoleDisplayString } from '../../functions/Casino/roleDisplay';
 
 export default {
 	data: new SlashCommandBuilder()
-		.setName('테테테테테테테테')
+		.setName('뽑기')
 		.setDescription('카지노에 참가할 인원을 체크합니다. \n 이벤트 개시 24시간 이전에 시도하십시오.')
 		.addStringOption(opt=>opt
 			.setName("글").setDescription("공지쓰면서 쓸 글입니다."))
+        .addBooleanOption(opt=>opt
+            .setName('인턴').setDescription('인턴을 굴리는지에 대한 여부').setRequired(false))
 		,
 	async execute(interaction:ChatInputCommandInteraction<CacheType>){
-		let content = '이번주 카지노 참가자 확인합니다!\n 참가하실 분은 ✨ 이모지를 눌러주세요!'
+        if(await checkAdmin(interaction) === false) return; // 관리자 전용임.
+		let content =  '<@everyone> 이번주 카지노 참가자 확인합니다!\n 참가하실 분은 ✨ 이모지를 눌러주세요!'
 		const p = await interaction.reply({ content , fetchReply: true })
 		await p.react('✨') // 참가하는 이모지
 		await p.react('✅') // 다음 스텝으로 넘어가는 이모지 (관리자용)
@@ -31,12 +35,25 @@ export default {
             collector.stop()
             if(reaction.emoji.name === '✅') {
                 const dataUsers = await p.reactions.cache.get('✨')?.users.fetch();
-                const users = dataUsers?.filter( u => u !== undefined && u.id !== botDiscordId && u.id !== interaction.user.id).map(getUserMeta);
+                const intern = interaction.options.getBoolean('인턴') ?? false;
+                const userRoles = dataUsers?.map(async (u)=>{
+                    return await p.guild?.members.fetch(u.id);
+                })
+                const internRoleId = await getInternRoleId(String(interaction.guildId));
+                const internFilter = intern ? async (u:User)=>{
+                        const userfetch = await p.guild?.members.fetch(u?.id);
+                        if(userfetch === undefined) return false;
+                        return userfetch.roles.cache.has(internRoleId ?? '');
+                    } : async (u:User)=>{ 
+                        const userfetch = await p.guild?.members.fetch(u?.id);;
+                        if(userfetch === undefined) return false;
+                        return !userfetch.roles.cache.has(internRoleId ?? '');
+                    };
+                const users = dataUsers?.filter( async u => u !== undefined && u.id !== botDiscordId && u.id !== interaction.user.id && await internFilter(u) === true).map(getUserMeta);
                 if(users === undefined || users.length < 0) {
                     await p.channel.send('오늘은 진행하지 않습니다...');
                     return;
                 }
-                
                 const roleList = await getCasinoRoles(String(interaction.guildId));
                 
                 const roles = await getRoleDisplayString(roleList);
@@ -56,7 +73,7 @@ export default {
                         for(const r of roleList){
                             const choice = choices.get(`${(r.Priority)%(roleList.length+1)}\u20E3`);
                             if(choice === undefined) continue;
-                            const choicer = (await choice.users.fetch()).filter(u => u !== undefined && u.id !== botDiscordId && u.id !== interaction.user.id).map(getUserMeta);
+                            const choicer = (await choice.users.fetch()).filter(u => u !== undefined && u.id !== botDiscordId && u.id !== interaction.user.id && users.find(u2=>u2.id !== u.id ) !== undefined).map(getUserMeta);
                             if(choicer.length === 0) continue; 
                             firstRole.set(r.RoleName,choicer);
                         }
@@ -69,7 +86,7 @@ export default {
                         await roleMessageSecond.react('✅') // 다음 스텝으로 넘어가는 이모지 (관리자용)
                         await roleMessageSecond.react('❌');
                         const roleCollector = roleMessageSecond.createReactionCollector({ filter:adminFilter, time: 24 * 60 * 60_000 });
-                        await roleShuffle(roleCollector,users,roleList,firstRole,interaction.user.id);
+                        await roleShuffle(roleCollector,users,roleList,firstRole,interaction.user.id,intern);
                     } else if(reaction.emoji.name === '❌') {
                         await p.channel.send('오늘은 진행하지 않습니다...');
                     }
@@ -86,40 +103,10 @@ export default {
 	
 }; 
 
-const keycapCode = [
-    '1️⃣',
-    '2️⃣',
-    '3️⃣',
-    '4️⃣',
-    '5️⃣',
-    '6️⃣',
-    '7️⃣',
-    '8️⃣',
-    '9️⃣',
-    '🔟',
-];
-
-const getRoleDisplayString = async(roles:{
+const roleShuffle = async (roleControl:ReactionCollector, userList :UserMeta[] | undefined,roles:{
     Priority: number;
     RoleName: string;
-}[]) =>{
-    const display = roles.filter(r=>!r.RoleName.endsWith('2'));
-    let str = '```';
-    for(let i = 0; i < display.length; i++){
-        // 1
-        str += `${keycapCode[i%10]} : ${display[i].RoleName}\n`;
-    }
-    str += '```';
-    return {str,len:display.length};
-}
-
-const roleShuffle = async (roleControl:ReactionCollector, userList :  {
-    id: string;
-    userName: string;
-}[] | undefined,roles:{
-    Priority: number;
-    RoleName: string;
-}[], firstRole:Map<string,UserMeta[]>,manager:string) =>{
+}[], firstRole:Map<string,UserMeta[]>,manager:string,intern:boolean) =>{
     let step = false;
     roleControl.on('collect', async (reaction, user) => {
         step = true;
@@ -140,7 +127,7 @@ const roleShuffle = async (roleControl:ReactionCollector, userList :  {
                 const choice = choices.get(`${(r.Priority)%(roles.length+1)}\u20E3`);
                 if(choice === undefined) continue;
                 const users = await choice.users.fetch();
-                const choicer = users.filter(u => u !== undefined && u.id !== botDiscordId && u.id !== user.id).map(getUserMeta);
+                const choicer = users.filter(u => u !== undefined && u.id !== botDiscordId && u.id !== user.id && userList.find(u2=>u2.id===u.id) !== undefined).map(getUserMeta);
                 if(choicer.length === 0) continue;
                 secondRoleMap.set(r.RoleName,choicer);
             }
@@ -227,7 +214,7 @@ const roleShuffle = async (roleControl:ReactionCollector, userList :  {
             }
 
             let msg = ''
-            msg += DateTime.now().setZone('Asia/Seoul').toFormat('yyyy-MM-dd')+' 카지노 역할 배정\n';
+            msg += DateTime.now().setZone('Asia/Seoul').toFormat('yyyy-MM-dd')+' 카지노 역할 배정 ' + intern ? '(인턴)' : ''+ '\n';
             msg += managerMsg;
             msg += firstTime;
             msg += secondTime;

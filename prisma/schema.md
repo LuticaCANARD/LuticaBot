@@ -87,4 +87,10 @@ erDiagram
     String RoleId "🗝️"
     }
   
+
+  "InternRoleId" {
+    String GuildId "🗝️"
+    String RoleId "🗝️"
+    }
+  
 ```

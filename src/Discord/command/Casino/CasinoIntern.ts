@@ -45,6 +45,7 @@ export default {
 				name : discordArguments.get("이름")
 			})
 			await replyInsertResult(interaction,insert.length === 1,userDiscord,isNeedSetToIntern,101) 
+
 		}
 		else
 		{
