@@ -25,7 +25,6 @@ for (const dir of dirs){
 		const filePath = path.join(now_path, file);
 		const command = require(filePath);
 		if ('data' in command && 'execute' in command) {
-			
 			commands.set(command.data.name, command);
 		} 
 		else if(command.__esModule && 'data' in command.default && 'execute' in command.default ) commands.set(command.default.data.name, command.default);

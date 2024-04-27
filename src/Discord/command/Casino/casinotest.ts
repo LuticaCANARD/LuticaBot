@@ -4,6 +4,7 @@ import { checkAdmin } from '../../Utils/Admincheck';
 import { botDiscordId } from '../../../utils/constant';
 import { getCasinoRoles } from '../../../model/CasinoRole';
 import { mention } from '../../Utils/discordUtil';
+import { DateTime } from 'luxon';
 
 export default {
 	data: new SlashCommandBuilder()
@@ -85,6 +86,18 @@ export default {
 	
 }; 
 
+const keycapCode = [
+    '1️⃣',
+    '2️⃣',
+    '3️⃣',
+    '4️⃣',
+    '5️⃣',
+    '6️⃣',
+    '7️⃣',
+    '8️⃣',
+    '9️⃣',
+    '🔟',
+];
 
 const getRoleDisplayString = async(roles:{
     Priority: number;
@@ -93,7 +106,8 @@ const getRoleDisplayString = async(roles:{
     const display = roles.filter(r=>!r.RoleName.endsWith('2'));
     let str = '```';
     for(let i = 0; i < display.length; i++){
-        str += `${i + 1}\u20E3 : ${display[i].RoleName}\n`;
+        // 1
+        str += `${keycapCode[i%10]} : ${display[i].RoleName}\n`;
     }
     str += '```';
     return {str,len:display.length};
@@ -108,6 +122,7 @@ const roleShuffle = async (roleControl:ReactionCollector, userList :  {
 }[], firstRole:Map<string,UserMeta[]>,manager:string) =>{
     let step = false;
     roleControl.on('collect', async (reaction, user) => {
+        step = true;
         if(reaction.emoji.name === '✅') {
             const userMap = new Map<string,string>();
             if(userList === undefined) 
@@ -202,14 +217,17 @@ const roleShuffle = async (roleControl:ReactionCollector, userList :  {
             let managerMsg = `매니저 : ${mention(manager)}\n`;
             let firstTime = '\n';
             for(const [roleName,user] of firstTimeResult){
-                firstTime += `${mention(user.id)} : ${roleName}\n`;
+                if(user != undefined)
+                    firstTime += `${mention(user.id)} : ${roleName}\n`;
             }
             let secondTime = '\n';
             for(const [roleName,user] of secondTimeResult){
-                secondTime += `${mention(user.id)} : ${roleName}\n`;
+                if(user != undefined)
+                    secondTime += `${mention(user.id)} : ${roleName}\n`;
             }
 
             let msg = ''
+            msg += DateTime.now().setZone('Asia/Seoul').toFormat('yyyy-MM-dd')+' 카지노 역할 배정\n';
             msg += managerMsg;
             msg += firstTime;
             msg += secondTime;
